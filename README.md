@@ -15,15 +15,17 @@ Require the adapter & register it with `haro.register(key, fn)`. The key must ma
 var haro = require('haro'),
     store;
 
-// Register the adapter
-haro.register('mongo', require('haro-mongo'));
-
 // Configure a store to utilize the adapter
 store = haro(null, {
   adapters: {
     mongo: "mongo://localhost/mydb"
   }
 });
+
+// Register the adapter
+store.register('mongo', require('haro-mongo'));
+
+// Ready to `load()`, `batch()` or `set()`!
 ```
 
 ## License
