@@ -49,12 +49,7 @@ function mongo (store, op, key, data) {
 									defer.resolve(null);
 								} else {
 									delete recs[0]._id;
-
-									store.set(key, recs[0], true).then(function (rec) {
-										defer.resolve(rec);
-									}, function (errrr) {
-										defer.reject(errrr);
-									});
+									defer.resolve(recs[0]);
 								}
 							});
 						} else {
@@ -64,16 +59,12 @@ function mongo (store, op, key, data) {
 								if (errr) {
 									defer.reject(errr);
 								} else {
-									store.batch(recs.map(function (i) {
+									defer.resolve(recs.map(function (i) {
 										let o = i;
 
 										delete o._id;
 										return o;
-									}), "set", true).then(function (args) {
-										defer.resolve(args);
-									}, function (errrr) {
-										defer.reject(errrr);
-									});
+									}));
 								}
 							});
 						}
