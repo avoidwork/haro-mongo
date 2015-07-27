@@ -14,6 +14,14 @@ function deferred () {
 	return {resolve: resolver, reject: rejecter, promise: promise};
 }
 
+function prepare (arg, id) {
+	let o = arg;
+
+	o[id] = o._id;
+	delete o._id;
+	return o;
+}
+
 function adapter (store, op, key, data) {
 	let defer = deferred(),
 		record = key !== undefined && store.has(key),
@@ -48,10 +56,7 @@ function adapter (store, op, key, data) {
 							} else if (recs.length === 0) {
 								defer.resolve(null);
 							} else {
-								// Returning the ID
-								recs[0][id] = recs[0]._id;
-								delete recs[0]._id;
-								defer.resolve(recs[0]);
+								defer.resolve(prepare(recs[0], id));
 							}
 						});
 					} else {
@@ -62,10 +67,7 @@ function adapter (store, op, key, data) {
 								defer.reject(errr);
 							} else {
 								defer.resolve(recs.map(function (i) {
-									let o = i;
-
-									delete o._id;
-									return o;
+									return prepare(i, id);
 								}));
 							}
 						});
