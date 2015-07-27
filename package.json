@@ -1,6 +1,6 @@
 {
   "name": "haro-mongo",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "MongoDB persistent storage adapter for Harō",
   "main": "lib/index.js",
   "repository": {

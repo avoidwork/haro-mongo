@@ -84,6 +84,7 @@ function adapter (store, op, key, data) {
 					});
 				} else if (op === "set") {
 					if (record) {
+						delete data[id];
 						collection.update({_id: key}, data, {
 							w: 1,
 							safe: true,
@@ -104,6 +105,7 @@ function adapter (store, op, key, data) {
 
 									deferreds.push(defer2.promise);
 
+									delete v[id];
 									collection.update({_id: k}, v, {
 										w: 1,
 										safe: true,
