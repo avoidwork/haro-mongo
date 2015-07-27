@@ -10,6 +10,8 @@ It is un-opinionated, and offers a plug'n'play solution to modeling, searching, 
 
 ***haro-mongo*** is a persistent storage adapter, providing 'auto saving' behavior, as well as the ability to `save()` & `load()` the entire DataStore.
 
+If `store.key` is not set, the fail over "id" field will be `id`.
+
 ### How to use
 Require the adapter & register it with `haro.register(key, fn)`. The key must match the `store.adapters` key.
 
@@ -20,7 +22,7 @@ var haro = require('haro'),
 // Configure a store to utilize the adapter
 store = haro(null, {
   adapters: {
-    mongo: "mongo://localhost/mydb"
+    mongo: "mongodb://localhost/mydb"
   }
 });
 

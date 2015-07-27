@@ -16,7 +16,8 @@ function deferred () {
 
 function adapter (store, op, key, data) {
 	let defer = deferred(),
-		record = key !== undefined && store.has(key);
+		record = key !== undefined && store.has(key),
+		id = store.key || "id";
 
 	mongodb.connect(store.adapters.mongo, function (e, db) {
 		function error (errr, arg) {
@@ -47,6 +48,8 @@ function adapter (store, op, key, data) {
 							} else if (recs.length === 0) {
 								defer.resolve(null);
 							} else {
+								// Returning the ID
+								recs[0][id] = recs[0]._id;
 								delete recs[0]._id;
 								defer.resolve(recs[0]);
 							}
