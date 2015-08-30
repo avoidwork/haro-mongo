@@ -68,6 +68,8 @@ function cmd (host, store, op, key, data, record, id) {
 	}, function (e) {
 		throw e;
 	}).then(function (coll) {
+		let deferreds;
+
 		if (op === "get") {
 			if (record) {
 				coll.find({_id: key}).limit(1).toArray(function (errr, recs) {
@@ -116,40 +118,31 @@ function cmd (host, store, op, key, data, record, id) {
 					upsert: true
 				}, error);
 			} else {
-				// Removing all documents & re-inserting
-				coll.remove({}, {w: 1, safe: true}, function (errr) {
-					let deferreds;
+				deferreds = [];
 
-					if (errr) {
-						error(errr);
-					} else {
-						deferreds = [];
+				store.forEach(function (v, k) {
+					let defer2 = deferred();
 
-						store.forEach(function (v, k) {
-							let defer2 = deferred();
+					deferreds.push(defer2.promise);
+					coll.update({_id: k}, v, {
+						w: 1,
+						safe: true,
+						upsert: true
+					}, function (errrr, arg) {
+						if (errrr) {
+							defer2.reject(errrr);
+						} else {
+							defer2.resolve(arg);
+						}
+					});
+				});
 
-							deferreds.push(defer2.promise);
-							coll.update({_id: k}, v, {
-								w: 1,
-								safe: true,
-								upsert: true
-							}, function (errrr, arg) {
-								if (errrr) {
-									defer2.reject(errrr);
-								} else {
-									defer2.resolve(arg);
-								}
-							});
-						});
-
-						Promise.all(deferreds).then(function (result) {
-							conn.close();
-							defer.resolve(result);
-						}, function (errrr) {
-							conn.close();
-							defer.reject(errrr);
-						});
-					}
+				Promise.all(deferreds).then(function (result) {
+					conn.close();
+					defer.resolve(result);
+				}, function (errrr) {
+					conn.close();
+					defer.reject(errrr);
 				});
 			}
 		}
