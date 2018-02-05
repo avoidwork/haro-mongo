@@ -8,6 +8,7 @@ function prepare (arg, id) {
 
 	o[id] = o._id;
 	delete o._id;
+
 	return o;
 }
 
@@ -53,6 +54,7 @@ function cmd (host, store, op, key, data, record, id) {
 
 	db(host).then(function (d) {
 		conn = d;
+
 		return collection(d, store.id);
 	}, function (e) {
 		throw e;
