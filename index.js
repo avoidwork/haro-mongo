@@ -116,4 +116,6 @@ async function cmd (host, store, op, key, data, record, id) {
 	});
 }
 
-module.exports = (store, op, key, data) => cmd(store.adapters.mongo, store, op, key, data, key !== undefined && store.has(key), store.key || "id");
+module.exports = async function (store, op, key, data) {
+	return await cmd(store.adapters.mongo, store, op, key, data, key !== undefined && store.has(key), store.key || "id");
+};
