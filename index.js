@@ -1,6 +1,7 @@
 "use strict";
 
-const mongodb = require("mongodb");
+const mongodb = require("mongodb"),
+	url = require("url");
 
 function prepare (arg, id) {
 	const o = arg;
@@ -11,7 +12,7 @@ function prepare (arg, id) {
 	return o;
 }
 
-async function db (host) {
+async function connect (host) {
 	return new Promise((resolve, reject) => {
 		mongodb.connect(host, (err, arg) => {
 			if (err) {
@@ -23,27 +24,17 @@ async function db (host) {
 	});
 }
 
-async function collection (d, id) {
-	return new Promise((resolve, reject) => {
-		d.collection(id, (e, c) => {
-			if (e) {
-				reject(e);
-			} else {
-				resolve(c);
-			}
-		});
-	});
-}
-
 async function cmd (host, store, op, key, data, record, id) {
 	return new Promise(async (resolve, reject) => {
-		const conn = await db(host),
-			coll = await collection(conn, store.id);
+		const parsed = url.parse(host),
+			client = await connect(`${parsed.protocol}//${parsed.host}${parsed.port !== null ? ":" + parsed.port : ""}`),
+			db = client.db(parsed.pathname.replace(/^\//, "")),
+			coll = db.collection(store.id);
 
 		if (op === "get") {
 			if (record) {
 				coll.find({_id: key}).limit(1).toArray((err, recs) => {
-					conn.close();
+					client.close();
 
 					if (err !== null) {
 						reject(err);
@@ -55,7 +46,7 @@ async function cmd (host, store, op, key, data, record, id) {
 				});
 			} else {
 				coll.find({}).toArray((err, recs) => {
-					conn.close();
+					client.close();
 
 					if (err !== null) {
 						reject(err);
@@ -68,7 +59,7 @@ async function cmd (host, store, op, key, data, record, id) {
 
 		if (op === "remove") {
 			coll.remove(record ? {_id: key} : {}, {safe: true}, (err, arg) => {
-				conn.close();
+				client.close();
 
 				if (err !== null) {
 					reject(err);
@@ -81,7 +72,7 @@ async function cmd (host, store, op, key, data, record, id) {
 		if (op === "set") {
 			if (record) {
 				coll.update({_id: key}, data, {w: 1, safe: true, upsert: true}, (err, arg) => {
-					conn.close();
+					client.close();
 
 					if (err !== null) {
 						reject(err);
@@ -105,10 +96,10 @@ async function cmd (host, store, op, key, data, record, id) {
 				});
 
 				Promise.all(deferreds).then(result => {
-					conn.close();
+					client.close();
 					resolve(result);
 				}, err => {
-					conn.close();
+					client.close();
 					reject(err);
 				});
 			}
