@@ -13,9 +13,9 @@ function prepare (arg, id) {
 
 async function db (host) {
 	return new Promise((resolve, reject) => {
-		mongodb.connect(host, function (e, arg) {
-			if (e) {
-				reject(e);
+		mongodb.connect(host, (err, arg) => {
+			if (err) {
+				reject(err);
 			} else {
 				resolve(arg);
 			}
@@ -25,7 +25,7 @@ async function db (host) {
 
 async function collection (d, id) {
 	return new Promise((resolve, reject) => {
-		d.collection(id, function (e, c) {
+		d.collection(id, (e, c) => {
 			if (e) {
 				reject(e);
 			} else {
@@ -42,7 +42,7 @@ async function cmd (host, store, op, key, data, record, id) {
 
 		if (op === "get") {
 			if (record) {
-				coll.find({_id: key}).limit(1).toArray(function (err, recs) {
+				coll.find({_id: key}).limit(1).toArray((err, recs) => {
 					conn.close();
 
 					if (err !== null) {
@@ -54,7 +54,7 @@ async function cmd (host, store, op, key, data, record, id) {
 					}
 				});
 			} else {
-				coll.find({}).toArray(function (err, recs) {
+				coll.find({}).toArray((err, recs) => {
 					conn.close();
 
 					if (err !== null) {
@@ -67,7 +67,7 @@ async function cmd (host, store, op, key, data, record, id) {
 		}
 
 		if (op === "remove") {
-			coll.remove(record ? {_id: key} : {}, {safe: true}, function (err, arg) {
+			coll.remove(record ? {_id: key} : {}, {safe: true}, (err, arg) => {
 				conn.close();
 
 				if (err !== null) {
@@ -116,6 +116,4 @@ async function cmd (host, store, op, key, data, record, id) {
 	});
 }
 
-module.exports = async function (store, op, key, data) {
-	return await cmd(store.adapters.mongo, store, op, key, data, key !== undefined && store.has(key), store.key || "id");
-};
+module.exports = async (store, op, key, data) => await cmd(store.adapters.mongo, store, op, key, data, key !== undefined && store.has(key), store.key || "id");
