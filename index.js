@@ -80,9 +80,14 @@ async function cmd (host, store, op, key, data, record, id) {
 
 		if (op === "set") {
 			if (record) {
-				coll.update({_id: key}, data, {w: 1, safe: true, upsert: true}, err => {
+				coll.update({_id: key}, data, {w: 1, safe: true, upsert: true}, (err, arg) => {
 					conn.close();
-					reject(err);
+
+					if (err !== null) {
+						reject(err);
+					} else {
+						resolve(arg);
+					}
 				});
 			} else {
 				const deferreds = [];
