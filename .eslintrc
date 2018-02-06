@@ -5,6 +5,10 @@
     "es6": true,
     "amd": false
   },
+  "parserOptions": {
+    "sourceType": "module",
+    "ecmaVersion": 2017
+  },
   "rules": {
     "arrow-parens": [2, "as-needed"],
     "arrow-spacing": [2, {"before": true, "after": true}],

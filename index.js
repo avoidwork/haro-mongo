@@ -1,6 +1,5 @@
 "use strict";
 
-const deferred = require("tiny-defer");
 const mongodb = require("mongodb");
 
 function prepare (arg, id) {
@@ -12,148 +11,104 @@ function prepare (arg, id) {
 	return o;
 }
 
-function db (host) {
-	let defer = deferred();
-
-	mongodb.connect(host, function (e, arg) {
-		if (e) {
-			defer.reject(e);
-		} else {
-			defer.resolve(arg);
-		}
+async function db (host) {
+	return new Promise((resolve, reject) => {
+		mongodb.connect(host, function (e, arg) {
+			if (e) {
+				reject(e);
+			} else {
+				resolve(arg);
+			}
+		});
 	});
-
-	return defer.promise;
 }
 
-function collection (d, id) {
-	let defer = deferred();
-
-	d.collection(id, function (e, c) {
-		if (e) {
-			defer.reject(e);
-		} else {
-			defer.resolve(c);
-		}
+async function collection (d, id) {
+	return new Promise((resolve, reject) => {
+		d.collection(id, function (e, c) {
+			if (e) {
+				reject(e);
+			} else {
+				resolve(c);
+			}
+		});
 	});
-
-	return defer.promise;
 }
 
-function cmd (host, store, op, key, data, record, id) {
-	let defer = deferred(),
-		conn;
-
-	function error (e) {
-		if (conn) {
-			conn.close();
-		}
-
-		defer.reject(e);
-	}
-
-	db(host).then(function (d) {
-		conn = d;
-
-		return collection(d, store.id);
-	}, function (e) {
-		throw e;
-	}).then(function (coll) {
-		let deferreds;
+async function cmd (host, store, op, key, data, record, id) {
+	return new Promise(async (resolve, reject) => {
+		const conn = await db(host),
+			coll = await collection(conn, store.id);
 
 		if (op === "get") {
 			if (record) {
-				coll.find({_id: key}).limit(1).toArray(function (errr, recs) {
+				coll.find({_id: key}).limit(1).toArray(function (err, recs) {
 					conn.close();
 
-					if (errr) {
-						defer.reject(errr);
+					if (err !== null) {
+						reject(err);
 					} else if (recs.length === 0) {
-						defer.resolve(null);
+						resolve(null);
 					} else {
-						defer.resolve(prepare(recs[0], id));
+						resolve(prepare(recs[0], id));
 					}
 				});
 			} else {
-				coll.find({}).toArray(function (errr, recs) {
+				coll.find({}).toArray(function (err, recs) {
 					conn.close();
 
-					if (errr) {
-						defer.reject(errr);
+					if (err !== null) {
+						reject(err);
 					} else {
-						defer.resolve(recs.map(function (i) {
-							return prepare(i, id);
-						}));
+						resolve(recs.map(i => prepare(i, id)));
 					}
 				});
 			}
 		}
 
 		if (op === "remove") {
-			coll.remove(record ? {_id: key} : {}, {safe: true}, function (errr, arg) {
+			coll.remove(record ? {_id: key} : {}, {safe: true}, function (err, arg) {
 				conn.close();
 
-				if (errr) {
-					defer.reject(errr);
+				if (err !== null) {
+					reject(err);
 				} else {
-					defer.resolve(arg);
+					resolve(arg);
 				}
 			});
 		}
 
 		if (op === "set") {
 			if (record) {
-				coll.update({_id: key}, data, {
-					w: 1,
-					safe: true,
-					upsert: true
-				}, error);
+				coll.update({_id: key}, data, {w: 1, safe: true, upsert: true}, err => {
+					conn.close();
+					reject(err);
+				});
 			} else {
-				deferreds = [];
+				const deferreds = [];
 
 				store.forEach(function (v, k) {
-					let defer2 = deferred();
-
-					deferreds.push(defer2.promise);
-					coll.update({_id: k}, v, {
-						w: 1,
-						safe: true,
-						upsert: true
-					}, function (errrr, arg) {
-						if (errrr) {
-							defer2.reject(errrr);
-						} else {
-							defer2.resolve(arg);
-						}
-					});
+					deferreds.push(new Promise((resolve2, reject2) => {
+						coll.update({_id: k}, v, {w: 1, safe: true, upsert: true}, (err, arg) => {
+							if (err !== null) {
+								reject2(err);
+							} else {
+								resolve2(arg);
+							}
+						});
+					}));
 				});
 
-				Promise.all(deferreds).then(function (result) {
+				Promise.all(deferreds).then(result => {
 					conn.close();
-					defer.resolve(result);
-				}, function (errrr) {
+					resolve(result);
+				}, err => {
 					conn.close();
-					defer.reject(errrr);
+					reject(err);
 				});
 			}
 		}
-	}, function (e) {
-		defer.reject(e);
 	});
-
-	return defer.promise;
 }
 
-function adapter (store, op, key, data) {
-	let defer = deferred();
-
-	cmd(store.adapters.mongo, store, op, key, data, key !== undefined && store.has(key), store.key || "id").then(function (arg) {
-		defer.resolve(arg);
-	}, function (e) {
-		defer.reject(e);
-	});
-
-	return defer.promise;
-}
-
-module.exports = adapter;
+module.exports = (store, op, key, data) => cmd(store.adapters.mongo, store, op, key, data, key !== undefined && store.has(key), store.key || "id");

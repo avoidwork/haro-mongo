@@ -27,7 +27,7 @@
     "url": "https://github.com/avoidwork/haro-mongo/issues"
   },
   "engines": {
-    "node": ">=8.0.0"
+    "node": ">=7.6.0"
   },
   "engineStrict": true,
   "homepage": "https://github.com/avoidwork/haro-mongo",
