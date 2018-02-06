@@ -3,7 +3,7 @@
 const mongodb = require("mongodb");
 
 function prepare (arg, id) {
-	let o = arg;
+	const o = arg;
 
 	o[id] = o._id;
 	delete o._id;
