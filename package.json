@@ -1,6 +1,6 @@
 {
   "name": "haro-mongo",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "MongoDB persistent storage adapter for Harō",
   "main": "index.js",
   "repository": {
@@ -32,11 +32,11 @@
   "engineStrict": true,
   "homepage": "https://github.com/avoidwork/haro-mongo",
   "devDependencies": {
-    "grunt": "^1.0.1",
+    "grunt": "^1.0.3",
     "grunt-cli": "^1.2.0",
-    "grunt-eslint": "^20.1.0"
+    "grunt-eslint": "^21.0.0"
   },
   "dependencies": {
-    "mongodb": "^3.0.2"
+    "mongodb": "^3.1.1"
   }
 }

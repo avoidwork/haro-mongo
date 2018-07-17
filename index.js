@@ -1,7 +1,7 @@
 "use strict";
 
 const mongodb = require("mongodb"),
-	url = require("url");
+	{URL} = require("url");
 
 function prepare (arg, id) {
 	const o = arg;
@@ -14,7 +14,7 @@ function prepare (arg, id) {
 
 async function connect (host) {
 	return new Promise((resolve, reject) => {
-		mongodb.connect(host, (err, arg) => {
+		mongodb.connect(host, {useNewUrlParser: true}, (err, arg) => {
 			if (err) {
 				reject(err);
 			} else {
@@ -26,8 +26,8 @@ async function connect (host) {
 
 async function cmd (host, store, op, key, data, record, id) {
 	return new Promise(async (resolve, reject) => {
-		const parsed = url.parse(host),
-			client = await connect(`${parsed.protocol}//${parsed.host}${parsed.port !== null ? ":" + parsed.port : ""}`),
+		const parsed = new URL(host),
+			client = await connect(`${parsed.protocol}//${parsed.host}${parsed.port.length > 0 ? `:${parsed.port}` : ""}`),
 			db = client.db(parsed.pathname.replace(/^\//, "")),
 			coll = db.collection(store.id);
 
