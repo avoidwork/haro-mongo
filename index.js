@@ -27,7 +27,7 @@ async function connect (host) {
 async function cmd (host, store, op, key, data, record, id) {
 	return new Promise(async (resolve, reject) => {
 		const parsed = new URL(host),
-			client = await connect(`${parsed.protocol}//${parsed.host}${parsed.port.length > 0 ? `:${parsed.port}` : ""}`),
+			client = await connect(host),
 			db = client.db(parsed.pathname.replace(/^\//, "")),
 			coll = db.collection(store.id);
 
@@ -71,7 +71,7 @@ async function cmd (host, store, op, key, data, record, id) {
 
 		if (op === "set") {
 			if (record) {
-				coll.update({_id: key}, data, {w: 1, safe: true, upsert: true}, (err, arg) => {
+				coll.updateOne({_id: key}, data, {w: 1, safe: true, upsert: true}, (err, arg) => {
 					client.close();
 
 					if (err !== null) {
@@ -81,26 +81,18 @@ async function cmd (host, store, op, key, data, record, id) {
 					}
 				});
 			} else {
-				const deferreds = [];
+				coll.updateMany({}, store.map(i => {
+					i._id = i[store.key];
 
-				store.forEach(function (v, k) {
-					deferreds.push(new Promise((resolve2, reject2) => {
-						coll.update({_id: k}, v, {w: 1, safe: true, upsert: true}, (err, arg) => {
-							if (err !== null) {
-								reject2(err);
-							} else {
-								resolve2(arg);
-							}
-						});
-					}));
-				});
+					return i;
+				}), {w: 1, safe: true, upsert: true}, (err, arg) => {
+					client.close();
 
-				Promise.all(deferreds).then(result => {
-					client.close();
-					resolve(result);
-				}, err => {
-					client.close();
-					reject(err);
+					if (err !== null) {
+						reject(err);
+					} else {
+						resolve(arg);
+					}
 				});
 			}
 		}
