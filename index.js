@@ -81,10 +81,11 @@ async function cmd (host, store, op, key, data, record, id) {
 					}
 				});
 			} else {
-				const deferreds = [];
+				Promise.all(store.reduce((a, v) => {
+					a.push(cmd(host, store, "set", v[store.key], v, true));
 
-				store.forEach((v, k) => deferreds.push(cmd(host, store, "set", k, v, true)));
-				Promise.all(deferreds).then(result => {
+					return a;
+				}, [], true)).then(result => {
 					client.close();
 					resolve(result);
 				}, err => {
