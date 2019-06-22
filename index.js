@@ -81,18 +81,15 @@ async function cmd (host, store, op, key, data, record, id) {
 					}
 				});
 			} else {
-				coll.updateMany({}, store.map(i => {
-					i._id = i[store.key];
+				const deferreds = [];
 
-					return i;
-				}), {w: 1, safe: true, upsert: true}, (err, arg) => {
+				store.forEach((v, k) => deferreds.push(cmd(host, store, "set", k, v, true)));
+				Promise.all(deferreds).then(result => {
 					client.close();
-
-					if (err !== null) {
-						reject(err);
-					} else {
-						resolve(arg);
-					}
+					resolve(result);
+				}, err => {
+					client.close();
+					reject(err);
 				});
 			}
 		}
