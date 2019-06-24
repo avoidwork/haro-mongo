@@ -82,11 +82,7 @@ async function cmd (host, store, op, key, data, record, id) {
 				});
 			} else {
 				client.close();
-				Promise.all(store.reduce((a, v) => {
-					a.push(cmd(host, store, "set", v[store.key], v, true));
-
-					return a;
-				}, [], true)).then(resolve, reject);
+				Promise.all(store.reduce((a, v) => [...a, cmd(host, store, "set", v[store.key], v, true)], [], true)).then(resolve, reject);
 			}
 		}
 	});
