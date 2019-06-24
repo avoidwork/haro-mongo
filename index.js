@@ -26,7 +26,7 @@ async function connect (host) {
 
 async function cmd (host, store, op, key, data, record, id) {
 	return new Promise(async (resolve, reject) => {
-		const parsed = new URL(host),
+		const parsed = new URL(host.includes(",") ? host.replace(/\/.*,/, "") : host),
 			client = await connect(host),
 			db = client.db(parsed.pathname.replace(/^\//, "")),
 			coll = db.collection(store.id);
