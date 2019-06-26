@@ -71,7 +71,7 @@ async function cmd (host, store, op, key, data, record, id) {
 
 		if (op === "set") {
 			if (record) {
-				coll.updateOne({_id: key}, data, {w: 1, safe: true, upsert: true}, (err, arg) => {
+				coll.updateOne({_id: key}, Object.keys(data).filter(i => i.startsWith("$")).length > 0 ? data : {$set: data}, {w: 1, safe: true, upsert: true}, (err, arg) => {
 					client.close();
 
 					if (err !== null) {
